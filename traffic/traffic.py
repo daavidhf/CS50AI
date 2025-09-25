@@ -95,25 +95,32 @@ def get_model():
 
     model = tf.keras.Sequential([
         tf.keras.layers.Input(shape=(IMG_WIDTH, IMG_HEIGHT, 3)),    # 30x30 RGB images
-        tf.keras.layers.Rescaling(1./255),
+        tf.keras.layers.Rescaling(1./255), # Normalizar valores que llegan entre 0-255 (enteros) y salen como 0-1 (flotantes). En primera capa queda ya integrada y optimiza coste operacional
 
-        tf.keras.layers.Conv2D(32, (3,3), padding="same", activation="relu"),
+        tf.keras.layers.Conv2D(32, (3,3), padding="same", activation="relu"), # Capturan bordes y texturas simples
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.MaxPooling2D((2,2)), # Escoge el máximo valor de la ventana 2x2
+
+        tf.keras.layers.Conv2D(64, (3,3), padding="same", activation="relu"), # Capturan patrones compuestos como curvas y esquinas
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.MaxPooling2D((2,2)),
 
-        tf.keras.layers.Conv2D(64, (3,3), padding="same", activation="relu"),
+        tf.keras.layers.Conv2D(128, (3,3), padding="same", activation="relu"), # capturan rasgos específicos del signo
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.MaxPooling2D((2,2)),
 
-        tf.keras.layers.Conv2D(128, (3,3), padding="same", activation="relu"),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.MaxPooling2D((2,2)),
-
-        tf.keras.layers.Flatten(),
+        tf.keras.layers.Flatten(), # Sirve para aplanar. Pasa mapas 2D/3D de las convoluciones a vector 1D para pasarlo a capas densas. Alternativa: GlobalAveragePooling2D
         tf.keras.layers.Dense(128, activation="relu"),
         tf.keras.layers.Dropout(0.5),
 
         tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax")
+
+        # Entrada: 30x30x3
+        # Bloque 1: Conv(32) -> 30x30x32 -> Pool -> 15x15x32
+        # Bloque 2: Conv(64) -> 15x15x64 -> Pool -> 7x7x64
+        # Bloque 3: Conv(128) -> 7x7x128 -> Pool -> 3x3x128
+        # Flatten: 1152
+        # A más filtros (64-128-256) más capacidad pero más riesgo de overfitting y más tiempo de entrenamiento
     ])
     
     model.compile(
